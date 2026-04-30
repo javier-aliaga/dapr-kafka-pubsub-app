@@ -28,14 +28,20 @@ i.e. abandoned during a rollout.
 
 ## Prerequisites
 
-- A `kind` cluster with a local registry at `localhost:5001` (we used the
-  standard `kind-with-registry.sh` setup).
-- Dapr control plane installed (`dapr init -k`).
-- Strimzi installed and a `Kafka` custom resource named `my-cluster` running
-  in the `kafka` namespace, reachable at
-  `my-cluster-kafka-bootstrap.kafka:9092`.
-  See https://strimzi.io/quickstarts/.
-- `kubectl`, `docker`, and Go 1.26+ on the host.
+- `kind`, `kubectl`, `docker`, `dapr` CLI, and Go 1.26+ on the host.
+
+## Cluster bootstrap
+
+```bash
+./scripts/setup-cluster.sh    # kind + local registry + cert-manager + Strimzi/Kafka + Redis
+dapr init -k                  # install Dapr control plane
+```
+
+The setup script (idempotent on the registry, recreates the kind cluster)
+provisions everything the harness needs: a 5-node kind cluster wired to a
+local registry at `localhost:5001`, cert-manager, Strimzi with a single-node
+Kafka cluster (`my-cluster-kafka-bootstrap.kafka:9092`), and an in-cluster
+Redis for SADD/SREM tracking.
 
 ## Layout
 
