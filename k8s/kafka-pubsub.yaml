@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokers
+      value: "my-cluster-kafka-bootstrap.kafka:9092"
+    - name: authType
+      value: "none"
+    - name: disableTls
+      value: "true"
+    - name: initialOffset
+      value: "oldest"
+    - name: consumerID
+      value: "subscriber"

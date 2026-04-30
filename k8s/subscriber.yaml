@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscriber
+  labels:
+    app: subscriber
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: subscriber
+  template:
+    metadata:
+      labels:
+        app: subscriber
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "subscriber"
+        dapr.io/app-port: "6001"
+        dapr.io/log-level: "info"
+        dapr.io/block-shutdown-duration: 10s
+        dapr.io/graceful-shutdown-seconds: "5"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: subscriber
+          image: localhost:5001/dapr-kafka/subscriber:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6001
+          env:
+            - name: APP_PORT
+              value: "6001"
+            - name: PROCESS_DELAY_MS
+              value: "100"
+            - name: REDIS_ADDR
+              value: "redis:6379"

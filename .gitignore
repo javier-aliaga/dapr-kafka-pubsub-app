@@ -1,0 +1,14 @@
+*.log
+.DS_Store
+.idea/
+.vscode/
+__debug_bin*
+
+# Go
+bin/
+dist/
+*.test
+*.out
+coverage.out
+publisher/publisher
+subscriber/subscriber

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: publisher
+  labels:
+    app: publisher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: publisher
+  template:
+    metadata:
+      labels:
+        app: publisher
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "publisher"
+        dapr.io/log-level: "info"
+    spec:
+      containers:
+        - name: publisher
+          image: localhost:5001/dapr-kafka/publisher:latest
+          imagePullPolicy: Always
+          env:
+            - name: PUBLISH_INTERVAL_MS
+              value: "0"
+            - name: TOTAL_PER_TOPIC
+              value: "25000"
+            - name: WORKERS
+              value: "8"
+            - name: REDIS_ADDR
+              value: "redis:6379"
