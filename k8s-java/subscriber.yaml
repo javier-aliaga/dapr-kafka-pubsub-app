@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-subscriber
+  namespace: dapr-kafka-java
+  labels:
+    app: java-subscriber
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-subscriber
+  template:
+    metadata:
+      labels:
+        app: java-subscriber
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "java-subscriber"
+        dapr.io/app-port: "7002"
+        dapr.io/log-level: "info"
+    spec:
+      containers:
+        - name: java-subscriber
+          image: localhost:5001/dapr-kafka/java-subscriber:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7002

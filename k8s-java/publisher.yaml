@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-publisher
+  namespace: dapr-kafka-java
+  labels:
+    app: java-publisher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-publisher
+  template:
+    metadata:
+      labels:
+        app: java-publisher
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "java-publisher"
+        dapr.io/app-port: "7001"
+        dapr.io/log-level: "info"
+    spec:
+      containers:
+        - name: java-publisher
+          image: localhost:5001/dapr-kafka/java-publisher:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7001
+          env:
+            - name: FIRST_BATCH
+              value: "18"
+            - name: SLEEP_MS
+              value: "5000"
+            - name: SECOND_BATCH
+              value: "10"

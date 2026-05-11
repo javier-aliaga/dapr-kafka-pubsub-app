@@ -2,8 +2,14 @@ REGISTRY ?= localhost:5001
 PLATFORM ?= linux/arm64
 PUBLISHER_IMG ?= $(REGISTRY)/dapr-kafka/publisher:latest
 SUBSCRIBER_IMG ?= $(REGISTRY)/dapr-kafka/subscriber:latest
+JAVA_PUBLISHER_IMG ?= $(REGISTRY)/dapr-kafka/java-publisher:latest
+JAVA_SUBSCRIBER_IMG ?= $(REGISTRY)/dapr-kafka/java-subscriber:latest
+JAVA_NS ?= dapr-kafka-java
+JAVA_TOPIC ?= topicBulkSub
 
-.PHONY: tidy build-publisher build-subscriber build push deploy undeploy logs-pub logs-sub rollout reproduce
+.PHONY: tidy build-publisher build-subscriber build push deploy undeploy logs-pub logs-sub rollout reproduce \
+        build-java-publisher build-java-subscriber build-java push-java deploy-java undeploy-java \
+        logs-java-pub logs-java-sub logs-java-sub-daprd java-results java-reset
 
 tidy:
 	cd publisher && go mod tidy
@@ -139,3 +145,51 @@ reconcile:
 	./reconcile.sh
 
 reproduce: build push deploy
+
+# ----- Java bulk-subscribe harness -----
+
+build-java-publisher:
+	docker buildx build --platform $(PLATFORM) -t $(JAVA_PUBLISHER_IMG) --load ./java-publisher
+
+build-java-subscriber:
+	docker buildx build --platform $(PLATFORM) -t $(JAVA_SUBSCRIBER_IMG) --load ./java-subscriber
+
+build-java: build-java-publisher build-java-subscriber
+
+push-java:
+	docker push $(JAVA_PUBLISHER_IMG)
+	docker push $(JAVA_SUBSCRIBER_IMG)
+
+deploy-java:
+	kubectl apply -f k8s-java/namespace.yaml
+	kubectl apply -f k8s-java/kafka-pubsub.yaml
+	kubectl apply -f k8s-java/subscriber.yaml
+	kubectl rollout status deploy/java-subscriber -n $(JAVA_NS) --timeout=120s
+	kubectl apply -f k8s-java/publisher.yaml
+
+undeploy-java:
+	-kubectl delete -f k8s-java/publisher.yaml
+	-kubectl delete -f k8s-java/subscriber.yaml
+	-kubectl delete -f k8s-java/kafka-pubsub.yaml
+	-kubectl delete -f k8s-java/namespace.yaml
+
+logs-java-pub:
+	kubectl logs -f deploy/java-publisher -n $(JAVA_NS) -c java-publisher
+
+logs-java-sub:
+	kubectl logs -f deploy/java-subscriber -n $(JAVA_NS) -c java-subscriber
+
+logs-java-sub-daprd:
+	kubectl logs -f deploy/java-subscriber -n $(JAVA_NS) -c daprd
+
+java-results:
+	kubectl exec -n $(JAVA_NS) deploy/java-subscriber -c java-subscriber -- \
+		curl -s http://localhost:7002/messages/$(JAVA_TOPIC) | python3 -m json.tool || true
+
+java-reset:
+	-kubectl exec -n $(KAFKA_NS) $(KAFKA_POD) -- bin/kafka-consumer-groups.sh \
+		--bootstrap-server localhost:9092 --delete --group java-subscriber
+	-kubectl exec -n $(KAFKA_NS) $(KAFKA_POD) -- bin/kafka-topics.sh \
+		--bootstrap-server localhost:9092 --delete --topic $(JAVA_TOPIC)
+	kubectl rollout restart deploy/java-subscriber -n $(JAVA_NS)
+	kubectl rollout restart deploy/java-publisher -n $(JAVA_NS)
