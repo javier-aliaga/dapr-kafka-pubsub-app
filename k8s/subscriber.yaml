@@ -18,10 +18,10 @@ spec:
         dapr.io/app-id: "subscriber"
         dapr.io/app-port: "6001"
         dapr.io/log-level: "info"
-        dapr.io/block-shutdown-duration: 10s
-        dapr.io/graceful-shutdown-seconds: "5"
+        dapr.io/block-shutdown-duration: 60s
+        dapr.io/graceful-shutdown-seconds: "15"
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 90
       containers:
         - name: subscriber
           image: localhost:5001/dapr-kafka/subscriber:latest
